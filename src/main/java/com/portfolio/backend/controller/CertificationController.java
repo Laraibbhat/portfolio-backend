@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/certifications")
+@RequestMapping("/api/users/{userId}/certifications")
 public class CertificationController {
 
     private final CertificationService certificationService;
@@ -21,33 +21,42 @@ public class CertificationController {
         this.certificationService = certificationService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<CertificationDTO>> getAllCertifications() {
-        List<CertificationDTO> certifications = certificationService.getAllCertifications();
-        return ResponseEntity.ok(certifications);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<CertificationDTO> getCertificationById(@PathVariable("id") Integer id) {
-        CertificationDTO certification = certificationService.getCertificationById(id);
-        return ResponseEntity.ok(certification);
-    }
-
     @PostMapping
-    public ResponseEntity<CertificationDTO> createCertification(@Valid @RequestBody CertificationDTO certificationDTO) {
-        CertificationDTO createdCertification = certificationService.createCertification(certificationDTO);
+    public ResponseEntity<CertificationDTO> createCertification(
+            @PathVariable Integer userId,
+            @Valid @RequestBody CertificationDTO certificationDTO) {
+        CertificationDTO createdCertification = certificationService.createCertification(userId, certificationDTO);
         return new ResponseEntity<>(createdCertification, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<CertificationDTO> updateCertification(@PathVariable("id") Integer id, @Valid @RequestBody CertificationDTO certificationDTO) {
-        CertificationDTO updatedCertification = certificationService.updateCertification(id, certificationDTO);
+    @GetMapping
+    public ResponseEntity<List<CertificationDTO>> getAllCertificationsByUserId(@PathVariable Integer userId) {
+        List<CertificationDTO> certificationList = certificationService.getAllCertificationsByUserId(userId);
+        return ResponseEntity.ok(certificationList);
+    }
+
+    @GetMapping("/{certificationId}")
+    public ResponseEntity<CertificationDTO> getCertificationByIdForUser(
+            @PathVariable Integer userId,
+            @PathVariable Integer certificationId) {
+        CertificationDTO certification = certificationService.getCertificationByIdForUser(userId, certificationId);
+        return ResponseEntity.ok(certification);
+    }
+
+    @PutMapping("/{certificationId}")
+    public ResponseEntity<CertificationDTO> updateCertification(
+            @PathVariable Integer userId,
+            @PathVariable Integer certificationId,
+            @Valid @RequestBody CertificationDTO certificationDTO) {
+        CertificationDTO updatedCertification = certificationService.updateCertification(userId, certificationId, certificationDTO);
         return ResponseEntity.ok(updatedCertification);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCertification(@PathVariable("id") Integer id) {
-        certificationService.deleteCertification(id);
+    @DeleteMapping("/{certificationId}")
+    public ResponseEntity<Void> deleteCertification(
+            @PathVariable Integer userId,
+            @PathVariable Integer certificationId) {
+        certificationService.deleteCertification(userId, certificationId);
         return ResponseEntity.noContent().build();
     }
 }

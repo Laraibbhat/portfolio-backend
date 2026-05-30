@@ -22,68 +22,68 @@ public class PublicationService {
     private final PublicationMapper publicationMapper;
 
     @Autowired
-    public PublicationService(PublicationRepository publicationRepository, UserRepository userRepository, PublicationMapper publicationMapper) {
+    public PublicationService(PublicationRepository publicationRepository,
+                              UserRepository userRepository,
+                              PublicationMapper publicationMapper) {
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
         this.publicationMapper = publicationMapper;
     }
 
-    public List<PublicationDTO> getAllPublications() {
-        return publicationRepository.findAll().stream()
-                .map(publicationMapper::toDto)
-                .collect(Collectors.toList());
+    // Helper method to find user by ID
+    private User findUserById(Integer userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
     }
 
-    public PublicationDTO getPublicationById(Integer id) {
-        Publication publication = publicationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Publication not found with id: " + id));
-        return publicationMapper.toDto(publication);
+    // Helper method to find publication by ID and user
+    private Publication findPublicationByIdAndUser(Integer publicationId, User user) {
+        return publicationRepository.findByIdAndUser(publicationId, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Publication not found with id: " + publicationId + " for user: " + user.getId()));
     }
 
     @Transactional
-    public PublicationDTO createPublication(PublicationDTO publicationDTO) {
-        String username = publicationDTO.getUsername();
-        Integer userId = publicationDTO.getUserId();
-        User user;
-        if (username != null && !username.trim().isEmpty()) {
-            user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
-        } else if (userId != null) {
-            user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        } else {
-            throw new IllegalArgumentException("Either username or userId must be provided");
-        }
+    public PublicationDTO createPublication(Integer userId, PublicationDTO publicationDTO) {
+        User user = findUserById(userId);
+
         Publication publication = publicationMapper.toEntity(publicationDTO);
         publication.setUser(user);
+
         Publication savedPublication = publicationRepository.save(publication);
         return publicationMapper.toDto(savedPublication);
     }
 
+    @Transactional(readOnly = true)
+    public List<PublicationDTO> getAllPublicationsByUserId(Integer userId) {
+        User user = findUserById(userId);
+        List<Publication> publicationList = publicationRepository.findByUser(user);
+        return publicationList.stream()
+                .map(publicationMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PublicationDTO getPublicationByIdForUser(Integer userId, Integer publicationId) {
+        User user = findUserById(userId);
+        Publication publication = findPublicationByIdAndUser(publicationId, user);
+        return publicationMapper.toDto(publication);
+    }
+
     @Transactional
-    public PublicationDTO updatePublication(Integer id, PublicationDTO publicationDTO) {
-        Publication existingPublication = publicationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Publication not found with id: " + id));
+    public PublicationDTO updatePublication(Integer userId, Integer publicationId, PublicationDTO publicationDTO) {
+        User user = findUserById(userId);
+        Publication existingPublication = findPublicationByIdAndUser(publicationId, user);
 
         publicationMapper.updateEntityFromDto(publicationDTO, existingPublication);
-        if (publicationDTO.getUsername() != null && !existingPublication.getUser().getUsername().equals(publicationDTO.getUsername())) {
-            User user = userRepository.findByUsername(publicationDTO.getUsername())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + publicationDTO.getUsername()));
-            existingPublication.setUser(user);
-        } else if (publicationDTO.getUserId() != null && !existingPublication.getUser().getId().equals(publicationDTO.getUserId())) {
-            User user = userRepository.findById(publicationDTO.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + publicationDTO.getUserId()));
-            existingPublication.setUser(user);
-        }
+
         Publication updatedPublication = publicationRepository.save(existingPublication);
         return publicationMapper.toDto(updatedPublication);
     }
 
     @Transactional
-    public void deletePublication(Integer id) {
-        if (!publicationRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Publication not found with id: " + id);
-        }
-        publicationRepository.deleteById(id);
+    public void deletePublication(Integer userId, Integer publicationId) {
+        User user = findUserById(userId);
+        Publication publication = findPublicationByIdAndUser(publicationId, user);
+        publicationRepository.delete(publication);
     }
 }

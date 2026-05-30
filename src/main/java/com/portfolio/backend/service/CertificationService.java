@@ -22,68 +22,68 @@ public class CertificationService {
     private final CertificationMapper certificationMapper;
 
     @Autowired
-    public CertificationService(CertificationRepository certificationRepository, UserRepository userRepository, CertificationMapper certificationMapper) {
+    public CertificationService(CertificationRepository certificationRepository,
+                                UserRepository userRepository,
+                                CertificationMapper certificationMapper) {
         this.certificationRepository = certificationRepository;
         this.userRepository = userRepository;
         this.certificationMapper = certificationMapper;
     }
 
-    public List<CertificationDTO> getAllCertifications() {
-        return certificationRepository.findAll().stream()
-                .map(certificationMapper::toDto)
-                .collect(Collectors.toList());
+    // Helper method to find user by ID
+    private User findUserById(Integer userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
     }
 
-    public CertificationDTO getCertificationById(Integer id) {
-        Certification certification = certificationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Certification not found with id: " + id));
-        return certificationMapper.toDto(certification);
+    // Helper method to find certification by ID and user
+    private Certification findCertificationByIdAndUser(Integer certificationId, User user) {
+        return certificationRepository.findByIdAndUser(certificationId, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Certification not found with id: " + certificationId + " for user: " + user.getId()));
     }
 
     @Transactional
-    public CertificationDTO createCertification(CertificationDTO certificationDTO) {
-        String username = certificationDTO.getUsername();
-        Integer userId = certificationDTO.getUserId();
-        User user;
-        if (username != null && !username.trim().isEmpty()) {
-            user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
-        } else if (userId != null) {
-            user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        } else {
-            throw new IllegalArgumentException("Either username or userId must be provided");
-        }
+    public CertificationDTO createCertification(Integer userId, CertificationDTO certificationDTO) {
+        User user = findUserById(userId);
+
         Certification certification = certificationMapper.toEntity(certificationDTO);
         certification.setUser(user);
+
         Certification savedCertification = certificationRepository.save(certification);
         return certificationMapper.toDto(savedCertification);
     }
 
+    @Transactional(readOnly = true)
+    public List<CertificationDTO> getAllCertificationsByUserId(Integer userId) {
+        User user = findUserById(userId);
+        List<Certification> certificationList = certificationRepository.findByUser(user);
+        return certificationList.stream()
+                .map(certificationMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public CertificationDTO getCertificationByIdForUser(Integer userId, Integer certificationId) {
+        User user = findUserById(userId);
+        Certification certification = findCertificationByIdAndUser(certificationId, user);
+        return certificationMapper.toDto(certification);
+    }
+
     @Transactional
-    public CertificationDTO updateCertification(Integer id, CertificationDTO certificationDTO) {
-        Certification existingCertification = certificationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Certification not found with id: " + id));
+    public CertificationDTO updateCertification(Integer userId, Integer certificationId, CertificationDTO certificationDTO) {
+        User user = findUserById(userId);
+        Certification existingCertification = findCertificationByIdAndUser(certificationId, user);
 
         certificationMapper.updateEntityFromDto(certificationDTO, existingCertification);
-        if (certificationDTO.getUsername() != null && !existingCertification.getUser().getUsername().equals(certificationDTO.getUsername())) {
-            User user = userRepository.findByUsername(certificationDTO.getUsername())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + certificationDTO.getUsername()));
-            existingCertification.setUser(user);
-        } else if (certificationDTO.getUserId() != null && !existingCertification.getUser().getId().equals(certificationDTO.getUserId())) {
-            User user = userRepository.findById(certificationDTO.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + certificationDTO.getUserId()));
-            existingCertification.setUser(user);
-        }
+
         Certification updatedCertification = certificationRepository.save(existingCertification);
         return certificationMapper.toDto(updatedCertification);
     }
 
     @Transactional
-    public void deleteCertification(Integer id) {
-        if (!certificationRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Certification not found with id: " + id);
-        }
-        certificationRepository.deleteById(id);
+    public void deleteCertification(Integer userId, Integer certificationId) {
+        User user = findUserById(userId);
+        Certification certification = findCertificationByIdAndUser(certificationId, user);
+        certificationRepository.delete(certification);
     }
 }

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/experiences")
+@RequestMapping("/api/users/{userId}/experiences")
 public class ExperienceController {
 
     private final ExperienceService experienceService;
@@ -21,33 +21,42 @@ public class ExperienceController {
         this.experienceService = experienceService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<ExperienceDTO>> getAllExperiences() {
-        List<ExperienceDTO> experiences = experienceService.getAllExperiences();
-        return ResponseEntity.ok(experiences);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ExperienceDTO> getExperienceById(@PathVariable("id") Integer id) {
-        ExperienceDTO experience = experienceService.getExperienceById(id);
-        return ResponseEntity.ok(experience);
-    }
-
     @PostMapping
-    public ResponseEntity<ExperienceDTO> createExperience(@Valid @RequestBody ExperienceDTO experienceDTO) {
-        ExperienceDTO createdExperience = experienceService.createExperience(experienceDTO);
+    public ResponseEntity<ExperienceDTO> createExperience(
+            @PathVariable Integer userId,
+            @Valid @RequestBody ExperienceDTO experienceDTO) {
+        ExperienceDTO createdExperience = experienceService.createExperience(userId, experienceDTO);
         return new ResponseEntity<>(createdExperience, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ExperienceDTO> updateExperience(@PathVariable("id") Integer id, @Valid @RequestBody ExperienceDTO experienceDTO) {
-        ExperienceDTO updatedExperience = experienceService.updateExperience(id, experienceDTO);
+    @GetMapping
+    public ResponseEntity<List<ExperienceDTO>> getAllExperienceByUserId(@PathVariable Integer userId) {
+        List<ExperienceDTO> experienceList = experienceService.getAllExperienceByUserId(userId);
+        return ResponseEntity.ok(experienceList);
+    }
+
+    @GetMapping("/{experienceId}")
+    public ResponseEntity<ExperienceDTO> getExperienceByIdForUser(
+            @PathVariable Integer userId,
+            @PathVariable Integer experienceId) {
+        ExperienceDTO experience = experienceService.getExperienceByIdForUser(userId, experienceId);
+        return ResponseEntity.ok(experience);
+    }
+
+    @PutMapping("/{experienceId}")
+    public ResponseEntity<ExperienceDTO> updateExperience(
+            @PathVariable Integer userId,
+            @PathVariable Integer experienceId,
+            @Valid @RequestBody ExperienceDTO experienceDTO) {
+        ExperienceDTO updatedExperience = experienceService.updateExperience(userId, experienceId, experienceDTO);
         return ResponseEntity.ok(updatedExperience);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExperience(@PathVariable("id") Integer id) {
-        experienceService.deleteExperience(id);
+    @DeleteMapping("/{experienceId}")
+    public ResponseEntity<Void> deleteExperience(
+            @PathVariable Integer userId,
+            @PathVariable Integer experienceId) {
+        experienceService.deleteExperience(userId, experienceId);
         return ResponseEntity.noContent().build();
     }
 }

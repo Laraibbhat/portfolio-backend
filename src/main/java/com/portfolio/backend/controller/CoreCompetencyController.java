@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/core-competencies")
+@RequestMapping("/api/users/{userId}/core-competencies")
 public class CoreCompetencyController {
 
     private final CoreCompetencyService coreCompetencyService;
@@ -21,33 +21,42 @@ public class CoreCompetencyController {
         this.coreCompetencyService = coreCompetencyService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<CoreCompetencyDTO>> getAllCoreCompetencies() {
-        List<CoreCompetencyDTO> coreCompetencies = coreCompetencyService.getAllCoreCompetencies();
-        return ResponseEntity.ok(coreCompetencies);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<CoreCompetencyDTO> getCoreCompetencyById(@PathVariable("id") Integer id) {
-        CoreCompetencyDTO coreCompetency = coreCompetencyService.getCoreCompetencyById(id);
-        return ResponseEntity.ok(coreCompetency);
-    }
-
     @PostMapping
-    public ResponseEntity<CoreCompetencyDTO> createCoreCompetency(@Valid @RequestBody CoreCompetencyDTO coreCompetencyDTO) {
-        CoreCompetencyDTO createdCoreCompetency = coreCompetencyService.createCoreCompetency(coreCompetencyDTO);
-        return new ResponseEntity<>(createdCoreCompetency, HttpStatus.CREATED);
+    public ResponseEntity<CoreCompetencyDTO> createCoreCompetency(
+            @PathVariable Integer userId,
+            @Valid @RequestBody CoreCompetencyDTO coreCompetencyDTO) {
+        CoreCompetencyDTO createdCompetency = coreCompetencyService.createCoreCompetency(userId, coreCompetencyDTO);
+        return new ResponseEntity<>(createdCompetency, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<CoreCompetencyDTO> updateCoreCompetency(@PathVariable("id") Integer id, @Valid @RequestBody CoreCompetencyDTO coreCompetencyDTO) {
-        CoreCompetencyDTO updatedCoreCompetency = coreCompetencyService.updateCoreCompetency(id, coreCompetencyDTO);
-        return ResponseEntity.ok(updatedCoreCompetency);
+    @GetMapping
+    public ResponseEntity<List<CoreCompetencyDTO>> getAllCoreCompetenciesByUserId(@PathVariable Integer userId) {
+        List<CoreCompetencyDTO> competencyList = coreCompetencyService.getAllCoreCompetenciesByUserId(userId);
+        return ResponseEntity.ok(competencyList);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCoreCompetency(@PathVariable("id") Integer id) {
-        coreCompetencyService.deleteCoreCompetency(id);
+    @GetMapping("/{competencyId}")
+    public ResponseEntity<CoreCompetencyDTO> getCoreCompetencyByIdForUser(
+            @PathVariable Integer userId,
+            @PathVariable Integer competencyId) {
+        CoreCompetencyDTO competency = coreCompetencyService.getCoreCompetencyByIdForUser(userId, competencyId);
+        return ResponseEntity.ok(competency);
+    }
+
+    @PutMapping("/{competencyId}")
+    public ResponseEntity<CoreCompetencyDTO> updateCoreCompetency(
+            @PathVariable Integer userId,
+            @PathVariable Integer competencyId,
+            @Valid @RequestBody CoreCompetencyDTO coreCompetencyDTO) {
+        CoreCompetencyDTO updatedCompetency = coreCompetencyService.updateCoreCompetency(userId, competencyId, coreCompetencyDTO);
+        return ResponseEntity.ok(updatedCompetency);
+    }
+
+    @DeleteMapping("/{competencyId}")
+    public ResponseEntity<Void> deleteCoreCompetency(
+            @PathVariable Integer userId,
+            @PathVariable Integer competencyId) {
+        coreCompetencyService.deleteCoreCompetency(userId, competencyId);
         return ResponseEntity.noContent().build();
     }
 }

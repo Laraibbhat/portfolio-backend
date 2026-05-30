@@ -17,6 +17,8 @@ public class Education {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User user;
 
     @Column(nullable = false, length = 100)
@@ -36,5 +38,7 @@ public class Education {
     private Integer displayOrder;
 
     @OneToMany(mappedBy = "education", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<EducationAchievement> achievements;
 }

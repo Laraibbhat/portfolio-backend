@@ -25,21 +25,50 @@ public class UserService {
         this.userMapper = userMapper;
     }
 
+    @Transactional(readOnly = true)
     public List<UserDTO> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toDto)
+        return userRepository.findAllWithDetails().stream()
+                .map(user -> {
+                    // Force initialization of all collections while transaction is active
+                    user.getTechnicalExpertise().size();
+                    user.getExperiences().size();
+                    user.getEducation().size();
+                    user.getCertifications().size();
+                    user.getPublications().size();
+                    user.getAwards().size();
+                    user.getCoreCompetencies().size();
+                    return userMapper.toDto(user);
+                })
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public UserDTO getUserById(Integer id) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        // Force initialization of all collections while transaction is active
+        user.getTechnicalExpertise().size();
+        user.getExperiences().size();
+        user.getEducation().size();
+        user.getCertifications().size();
+        user.getPublications().size();
+        user.getAwards().size();
+        user.getCoreCompetencies().size();
         return userMapper.toDto(user);
     }
 
+    @Transactional(readOnly = true)
     public UserDTO getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithDetails(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+        // Force initialization of all collections while transaction is active
+        user.getTechnicalExpertise().size();
+        user.getExperiences().size();
+        user.getEducation().size();
+        user.getCertifications().size();
+        user.getPublications().size();
+        user.getAwards().size();
+        user.getCoreCompetencies().size();
         return userMapper.toDto(user);
     }
 

@@ -54,16 +54,34 @@ public class ProfileService {
         this.coreCompetencyMapper = coreCompetencyMapper;
     }
 
+    @Transactional(readOnly = true)
     public List<ProfileDTO> getAllProfiles() {
-        return userRepository.findAll().stream()
-                .map(profileMapper::toProfileDTO)
+        return userRepository.findAllWithDetails().stream()
+                .map(user -> {
+                    // Force initialization of all collections and nested collections while transaction is active
+                    initializeUserCollections(user);
+                    return profileMapper.toProfileDTO(user);
+                })
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public ProfileDTO getProfileByUsername(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithDetails(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found with username: " + username));
+        // Force initialization of all collections and nested collections while transaction is active
+        initializeUserCollections(user);
         return profileMapper.toProfileDTO(user);
+    }
+
+    private void initializeUserCollections(User user) {
+        user.getTechnicalExpertise().size();
+        user.getExperiences().forEach(exp -> exp.getHighlights().size());
+        user.getEducation().forEach(edu -> edu.getAchievements().size());
+        user.getCertifications().size();
+        user.getPublications().size();
+        user.getAwards().size();
+        user.getCoreCompetencies().size();
     }
 
     @Transactional
@@ -188,7 +206,7 @@ public class ProfileService {
 
     @Transactional
     public ProfileDTO updateProfile(String username, ProfileDTO profileDTO) {
-        User existingUser = userRepository.findByUsername(username)
+        User existingUser = userRepository.findByUsernameWithDetails(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found with username: " + username));
 
         profileMapper.updateUserFromProfileDTO(profileDTO, existingUser); // Update basic user fields

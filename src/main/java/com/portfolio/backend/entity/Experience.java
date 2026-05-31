@@ -3,6 +3,7 @@ package com.portfolio.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "experiences")
@@ -17,6 +18,9 @@ public class Experience {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private User user;
 
     @Column(nullable = false, length = 100)

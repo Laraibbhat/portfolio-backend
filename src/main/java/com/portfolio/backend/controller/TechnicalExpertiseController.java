@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/technical-expertise")
+@RequestMapping("/api/users/{userId}/technical-expertise")
 public class TechnicalExpertiseController {
 
     private final TechnicalExpertiseService technicalExpertiseService;
@@ -21,33 +21,42 @@ public class TechnicalExpertiseController {
         this.technicalExpertiseService = technicalExpertiseService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<TechnicalExpertiseDTO>> getAllTechnicalExpertise() {
-        List<TechnicalExpertiseDTO> technicalExpertise = technicalExpertiseService.getAllTechnicalExpertise();
-        return ResponseEntity.ok(technicalExpertise);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<TechnicalExpertiseDTO> getTechnicalExpertiseById(@PathVariable("id") Integer id) {
-        TechnicalExpertiseDTO technicalExpertise = technicalExpertiseService.getTechnicalExpertiseById(id);
-        return ResponseEntity.ok(technicalExpertise);
-    }
-
     @PostMapping
-    public ResponseEntity<TechnicalExpertiseDTO> createTechnicalExpertise(@Valid @RequestBody TechnicalExpertiseDTO technicalExpertiseDTO) {
-        TechnicalExpertiseDTO createdTechnicalExpertise = technicalExpertiseService.createTechnicalExpertise(technicalExpertiseDTO);
-        return new ResponseEntity<>(createdTechnicalExpertise, HttpStatus.CREATED);
+    public ResponseEntity<TechnicalExpertiseDTO> createTechnicalExpertise(
+            @PathVariable Integer userId,
+            @Valid @RequestBody TechnicalExpertiseDTO technicalExpertiseDTO) {
+        TechnicalExpertiseDTO createdExpertise = technicalExpertiseService.createTechnicalExpertise(userId, technicalExpertiseDTO);
+        return new ResponseEntity<>(createdExpertise, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<TechnicalExpertiseDTO> updateTechnicalExpertise(@PathVariable("id") Integer id, @Valid @RequestBody TechnicalExpertiseDTO technicalExpertiseDTO) {
-        TechnicalExpertiseDTO updatedTechnicalExpertise = technicalExpertiseService.updateTechnicalExpertise(id, technicalExpertiseDTO);
-        return ResponseEntity.ok(updatedTechnicalExpertise);
+    @GetMapping
+    public ResponseEntity<List<TechnicalExpertiseDTO>> getAllTechnicalExpertiseByUserId(@PathVariable Integer userId) {
+        List<TechnicalExpertiseDTO> expertiseList = technicalExpertiseService.getAllTechnicalExpertiseByUserId(userId);
+        return ResponseEntity.ok(expertiseList);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTechnicalExpertise(@PathVariable("id") Integer id) {
-        technicalExpertiseService.deleteTechnicalExpertise(id);
+    @GetMapping("/{expertiseId}")
+    public ResponseEntity<TechnicalExpertiseDTO> getTechnicalExpertiseByIdForUser(
+            @PathVariable Integer userId,
+            @PathVariable Integer expertiseId) {
+        TechnicalExpertiseDTO expertise = technicalExpertiseService.getTechnicalExpertiseByIdForUser(userId, expertiseId);
+        return ResponseEntity.ok(expertise);
+    }
+
+    @PutMapping("/{expertiseId}")
+    public ResponseEntity<TechnicalExpertiseDTO> updateTechnicalExpertise(
+            @PathVariable Integer userId,
+            @PathVariable Integer expertiseId,
+            @Valid @RequestBody TechnicalExpertiseDTO technicalExpertiseDTO) {
+        TechnicalExpertiseDTO updatedExpertise = technicalExpertiseService.updateTechnicalExpertise(userId, expertiseId, technicalExpertiseDTO);
+        return ResponseEntity.ok(updatedExpertise);
+    }
+
+    @DeleteMapping("/{expertiseId}")
+    public ResponseEntity<Void> deleteTechnicalExpertise(
+            @PathVariable Integer userId,
+            @PathVariable Integer expertiseId) {
+        technicalExpertiseService.deleteTechnicalExpertise(userId, expertiseId);
         return ResponseEntity.noContent().build();
     }
 }

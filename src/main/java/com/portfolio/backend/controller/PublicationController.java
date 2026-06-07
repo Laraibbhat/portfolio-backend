@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/publications")
+@RequestMapping("/api/users/{userId}/publications")
 public class PublicationController {
 
     private final PublicationService publicationService;
@@ -21,33 +21,42 @@ public class PublicationController {
         this.publicationService = publicationService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<PublicationDTO>> getAllPublications() {
-        List<PublicationDTO> publications = publicationService.getAllPublications();
-        return ResponseEntity.ok(publications);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<PublicationDTO> getPublicationById(@PathVariable("id") Integer id) {
-        PublicationDTO publication = publicationService.getPublicationById(id);
-        return ResponseEntity.ok(publication);
-    }
-
     @PostMapping
-    public ResponseEntity<PublicationDTO> createPublication(@Valid @RequestBody PublicationDTO publicationDTO) {
-        PublicationDTO createdPublication = publicationService.createPublication(publicationDTO);
+    public ResponseEntity<PublicationDTO> createPublication(
+            @PathVariable Integer userId,
+            @Valid @RequestBody PublicationDTO publicationDTO) {
+        PublicationDTO createdPublication = publicationService.createPublication(userId, publicationDTO);
         return new ResponseEntity<>(createdPublication, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<PublicationDTO> updatePublication(@PathVariable("id") Integer id, @Valid @RequestBody PublicationDTO publicationDTO) {
-        PublicationDTO updatedPublication = publicationService.updatePublication(id, publicationDTO);
+    @GetMapping
+    public ResponseEntity<List<PublicationDTO>> getAllPublicationsByUserId(@PathVariable Integer userId) {
+        List<PublicationDTO> publicationList = publicationService.getAllPublicationsByUserId(userId);
+        return ResponseEntity.ok(publicationList);
+    }
+
+    @GetMapping("/{publicationId}")
+    public ResponseEntity<PublicationDTO> getPublicationByIdForUser(
+            @PathVariable Integer userId,
+            @PathVariable Integer publicationId) {
+        PublicationDTO publication = publicationService.getPublicationByIdForUser(userId, publicationId);
+        return ResponseEntity.ok(publication);
+    }
+
+    @PutMapping("/{publicationId}")
+    public ResponseEntity<PublicationDTO> updatePublication(
+            @PathVariable Integer userId,
+            @PathVariable Integer publicationId,
+            @Valid @RequestBody PublicationDTO publicationDTO) {
+        PublicationDTO updatedPublication = publicationService.updatePublication(userId, publicationId, publicationDTO);
         return ResponseEntity.ok(updatedPublication);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePublication(@PathVariable("id") Integer id) {
-        publicationService.deletePublication(id);
+    @DeleteMapping("/{publicationId}")
+    public ResponseEntity<Void> deletePublication(
+            @PathVariable Integer userId,
+            @PathVariable Integer publicationId) {
+        publicationService.deletePublication(userId, publicationId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -14,6 +14,8 @@ public class ProfileDTO {
    private String email;
    private String phone;
    private String location;
+   private String avatarKey;
+   private String avatarUrl;
    private String summary;
    
    private Double experienceYears;

@@ -29,6 +29,8 @@ public class ProfileService {
     private final AwardMapper awardMapper;
     private final CoreCompetencyMapper coreCompetencyMapper;
 
+    private final S3UploadsService s3UploadsService;
+
     @Autowired
     public ProfileService(UserRepository userRepository,
                           ProfileMapper profileMapper,
@@ -40,7 +42,8 @@ public class ProfileService {
                           CertificationMapper certificationMapper,
                           PublicationMapper publicationMapper,
                           AwardMapper awardMapper,
-                          CoreCompetencyMapper coreCompetencyMapper) {
+                          CoreCompetencyMapper coreCompetencyMapper,
+                          S3UploadsService s3UploadsService) {
         this.userRepository = userRepository;
         this.profileMapper = profileMapper;
         this.technicalExpertiseMapper = technicalExpertiseMapper;
@@ -52,18 +55,51 @@ public class ProfileService {
         this.publicationMapper = publicationMapper;
         this.awardMapper = awardMapper;
         this.coreCompetencyMapper = coreCompetencyMapper;
+        this.s3UploadsService = s3UploadsService;
     }
 
+    @Transactional(readOnly = true)
     public List<ProfileDTO> getAllProfiles() {
-        return userRepository.findAll().stream()
-                .map(profileMapper::toProfileDTO)
+        return userRepository.findAllWithDetails().stream()
+                .map(user -> {
+                    // Force initialization of all collections and nested collections while transaction is active
+                    initializeUserCollections(user);
+                    return profileMapper.toProfileDTO(user);
+                })
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public ProfileDTO getProfileByUsername(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithDetails(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found with username: " + username));
-        return profileMapper.toProfileDTO(user);
+        // Force initialization of all collections and nested collections while transaction is active
+        initializeUserCollections(user);
+        
+        ProfileDTO profileDTO = profileMapper.toProfileDTO(user);
+        
+        // Add presigned avatar URL if avatar exists
+        if (user.getAvatarKey() != null && !user.getAvatarKey().isEmpty()) {
+            try {
+                PresignedUrlResponse presignedUrl = s3UploadsService.generatePresignedDownloadUrl(user.getAvatarKey());
+                profileDTO.setAvatarUrl(presignedUrl.getUploadUrl());
+            } catch (Exception e) {
+                // Log error but don't fail the profile fetch
+                System.err.println("Failed to generate avatar presigned URL: " + e.getMessage());
+            }
+        }
+        
+        return profileDTO;
+    }
+
+    private void initializeUserCollections(User user) {
+        user.getTechnicalExpertise().size();
+        user.getExperiences().forEach(exp -> exp.getHighlights().size());
+        user.getEducation().forEach(edu -> edu.getAchievements().size());
+        user.getCertifications().size();
+        user.getPublications().size();
+        user.getAwards().size();
+        user.getCoreCompetencies().size();
     }
 
     @Transactional
@@ -188,7 +224,7 @@ public class ProfileService {
 
     @Transactional
     public ProfileDTO updateProfile(String username, ProfileDTO profileDTO) {
-        User existingUser = userRepository.findByUsername(username)
+        User existingUser = userRepository.findByUsernameWithDetails(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found with username: " + username));
 
         profileMapper.updateUserFromProfileDTO(profileDTO, existingUser); // Update basic user fields

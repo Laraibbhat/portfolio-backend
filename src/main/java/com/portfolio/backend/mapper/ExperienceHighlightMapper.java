@@ -7,16 +7,17 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring",
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface ExperienceHighlightMapper {
-    @Mapping(source = "experience.id", target = "experienceId")
+
     ExperienceHighlightDTO toDto(ExperienceHighlight experienceHighlight);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "experience", ignore = true)
+    @Mapping(target = "experience", ignore = true) // Experience will be set by the service
     ExperienceHighlight toEntity(ExperienceHighlightDTO experienceHighlightDTO);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "experience", ignore = true)
+    @Mapping(target = "experience", ignore = true) // Experience should not be updated via highlight DTO
     void updateEntityFromDto(ExperienceHighlightDTO experienceHighlightDTO, @MappingTarget ExperienceHighlight experienceHighlight);
 }

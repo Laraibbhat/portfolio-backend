@@ -22,70 +22,68 @@ public class TechnicalExpertiseService {
     private final TechnicalExpertiseMapper technicalExpertiseMapper;
 
     @Autowired
-    public TechnicalExpertiseService(TechnicalExpertiseRepository technicalExpertiseRepository, UserRepository userRepository, TechnicalExpertiseMapper technicalExpertiseMapper) {
+    public TechnicalExpertiseService(TechnicalExpertiseRepository technicalExpertiseRepository,
+                                     UserRepository userRepository,
+                                     TechnicalExpertiseMapper technicalExpertiseMapper) {
         this.technicalExpertiseRepository = technicalExpertiseRepository;
         this.userRepository = userRepository;
         this.technicalExpertiseMapper = technicalExpertiseMapper;
     }
 
-    public List<TechnicalExpertiseDTO> getAllTechnicalExpertise() {
-        return technicalExpertiseRepository.findAll().stream()
-                .map(technicalExpertiseMapper::toDto)
-                .collect(Collectors.toList());
+    // Helper method to find user by ID
+    private User findUserById(Integer userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
     }
 
-    public TechnicalExpertiseDTO getTechnicalExpertiseById(Integer id) {
-        TechnicalExpertise technicalExpertise = technicalExpertiseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Technical Expertise not found with id: " + id));
-        return technicalExpertiseMapper.toDto(technicalExpertise);
+    // Helper method to find technical expertise by ID and user
+    private TechnicalExpertise findTechnicalExpertiseByIdAndUser(Integer expertiseId, User user) {
+        return technicalExpertiseRepository.findByIdAndUser(expertiseId, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Technical Expertise not found with id: " + expertiseId + " for user: " + user.getId()));
     }
 
     @Transactional
-    public TechnicalExpertiseDTO createTechnicalExpertise(TechnicalExpertiseDTO technicalExpertiseDTO) {
-        // Prefer username if provided, fall back to userId for compatibility
-        String username = technicalExpertiseDTO.getUsername();
-        Integer userId = technicalExpertiseDTO.getUserId();
-        User user;
-        if (username != null && !username.trim().isEmpty()) {
-            user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
-        } else if (userId != null) {
-            user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        } else {
-            throw new IllegalArgumentException("Either username or userId must be provided");
-        }
+    public TechnicalExpertiseDTO createTechnicalExpertise(Integer userId, TechnicalExpertiseDTO technicalExpertiseDTO) {
+        User user = findUserById(userId);
+
         TechnicalExpertise technicalExpertise = technicalExpertiseMapper.toEntity(technicalExpertiseDTO);
         technicalExpertise.setUser(user);
+
         TechnicalExpertise savedTechnicalExpertise = technicalExpertiseRepository.save(technicalExpertise);
         return technicalExpertiseMapper.toDto(savedTechnicalExpertise);
     }
 
-    @Transactional
-    public TechnicalExpertiseDTO updateTechnicalExpertise(Integer id, TechnicalExpertiseDTO technicalExpertiseDTO) {
-        TechnicalExpertise existingTechnicalExpertise = technicalExpertiseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Technical Expertise not found with id: " + id));
+    @Transactional(readOnly = true)
+    public List<TechnicalExpertiseDTO> getAllTechnicalExpertiseByUserId(Integer userId) {
+        User user = findUserById(userId);
+        List<TechnicalExpertise> expertiseList = technicalExpertiseRepository.findByUser(user);
+        return expertiseList.stream()
+                .map(technicalExpertiseMapper::toDto)
+                .collect(Collectors.toList());
+    }
 
-        technicalExpertiseMapper.updateEntityFromDto(technicalExpertiseDTO, existingTechnicalExpertise);
-        // If username is provided and different, update relation; otherwise fall back to userId
-        if (technicalExpertiseDTO.getUsername() != null && !existingTechnicalExpertise.getUser().getUsername().equals(technicalExpertiseDTO.getUsername())) {
-            User user = userRepository.findByUsername(technicalExpertiseDTO.getUsername())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + technicalExpertiseDTO.getUsername()));
-            existingTechnicalExpertise.setUser(user);
-        } else if (technicalExpertiseDTO.getUserId() != null && !existingTechnicalExpertise.getUser().getId().equals(technicalExpertiseDTO.getUserId())) {
-            User user = userRepository.findById(technicalExpertiseDTO.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + technicalExpertiseDTO.getUserId()));
-            existingTechnicalExpertise.setUser(user);
-        }
-        TechnicalExpertise updatedTechnicalExpertise = technicalExpertiseRepository.save(existingTechnicalExpertise);
-        return technicalExpertiseMapper.toDto(updatedTechnicalExpertise);
+    @Transactional(readOnly = true)
+    public TechnicalExpertiseDTO getTechnicalExpertiseByIdForUser(Integer userId, Integer expertiseId) {
+        User user = findUserById(userId);
+        TechnicalExpertise technicalExpertise = findTechnicalExpertiseByIdAndUser(expertiseId, user);
+        return technicalExpertiseMapper.toDto(technicalExpertise);
     }
 
     @Transactional
-    public void deleteTechnicalExpertise(Integer id) {
-        if (!technicalExpertiseRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Technical Expertise not found with id: " + id);
-        }
-        technicalExpertiseRepository.deleteById(id);
+    public TechnicalExpertiseDTO updateTechnicalExpertise(Integer userId, Integer expertiseId, TechnicalExpertiseDTO technicalExpertiseDTO) {
+        User user = findUserById(userId);
+        TechnicalExpertise existingExpertise = findTechnicalExpertiseByIdAndUser(expertiseId, user);
+
+        technicalExpertiseMapper.updateEntityFromDto(technicalExpertiseDTO, existingExpertise);
+
+        TechnicalExpertise updatedExpertise = technicalExpertiseRepository.save(existingExpertise);
+        return technicalExpertiseMapper.toDto(updatedExpertise);
+    }
+
+    @Transactional
+    public void deleteTechnicalExpertise(Integer userId, Integer expertiseId) {
+        User user = findUserById(userId);
+        TechnicalExpertise technicalExpertise = findTechnicalExpertiseByIdAndUser(expertiseId, user);
+        technicalExpertiseRepository.delete(technicalExpertise);
     }
 }

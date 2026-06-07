@@ -40,9 +40,12 @@ public class UserRequestDTO {
 
     private Set<TechnicalExpertiseDTO> technicalExpertise;
     private Set<ExperienceDTO> experiences;
-    private Set<EducationDTO> educations;
+    private Set<EducationDTO> education;
     private Set<CertificationDTO> certifications;
     private Set<PublicationDTO> publications;
     private Set<AwardDTO> awards;
     private Set<CoreCompetencyDTO> coreCompetencies;
+
+    private String avatarKey;
+    private String avatarUrl;
 }

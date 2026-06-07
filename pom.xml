@@ -17,6 +17,7 @@
 		<java.version>17</java.version>
 		<org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
 		<lombok.version>1.18.30</lombok.version> <!-- Explicitly defining lombok version -->
+		<aws-java-sdk.version>2.21.0</aws-java-sdk.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -55,6 +56,20 @@
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
 			<version>${org.mapstruct.version}</version>
+		</dependency>
+
+		<!-- AWS SDK v2 for S3 -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>${aws-java-sdk.version}</version>
+		</dependency>
+
+		<!-- DotEnv for loading .env files -->
+		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>dotenv-java</artifactId>
+			<version>3.0.0</version>
 		</dependency>
 
 		<dependency>

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/awards")
+@RequestMapping("/api/users/{userId}/awards")
 public class AwardController {
 
     private final AwardService awardService;
@@ -21,33 +21,42 @@ public class AwardController {
         this.awardService = awardService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<AwardDTO>> getAllAwards() {
-        List<AwardDTO> awards = awardService.getAllAwards();
-        return ResponseEntity.ok(awards);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<AwardDTO> getAwardById(@PathVariable("id") Integer id) {
-        AwardDTO award = awardService.getAwardById(id);
-        return ResponseEntity.ok(award);
-    }
-
     @PostMapping
-    public ResponseEntity<AwardDTO> createAward(@Valid @RequestBody AwardDTO awardDTO) {
-        AwardDTO createdAward = awardService.createAward(awardDTO);
+    public ResponseEntity<AwardDTO> createAward(
+            @PathVariable Integer userId,
+            @Valid @RequestBody AwardDTO awardDTO) {
+        AwardDTO createdAward = awardService.createAward(userId, awardDTO);
         return new ResponseEntity<>(createdAward, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<AwardDTO> updateAward(@PathVariable("id") Integer id, @Valid @RequestBody AwardDTO awardDTO) {
-        AwardDTO updatedAward = awardService.updateAward(id, awardDTO);
+    @GetMapping
+    public ResponseEntity<List<AwardDTO>> getAllAwardsByUserId(@PathVariable Integer userId) {
+        List<AwardDTO> awardList = awardService.getAllAwardsByUserId(userId);
+        return ResponseEntity.ok(awardList);
+    }
+
+    @GetMapping("/{awardId}")
+    public ResponseEntity<AwardDTO> getAwardByIdForUser(
+            @PathVariable Integer userId,
+            @PathVariable Integer awardId) {
+        AwardDTO award = awardService.getAwardByIdForUser(userId, awardId);
+        return ResponseEntity.ok(award);
+    }
+
+    @PutMapping("/{awardId}")
+    public ResponseEntity<AwardDTO> updateAward(
+            @PathVariable Integer userId,
+            @PathVariable Integer awardId,
+            @Valid @RequestBody AwardDTO awardDTO) {
+        AwardDTO updatedAward = awardService.updateAward(userId, awardId, awardDTO);
         return ResponseEntity.ok(updatedAward);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAward(@PathVariable("id") Integer id) {
-        awardService.deleteAward(id);
+    @DeleteMapping("/{awardId}")
+    public ResponseEntity<Void> deleteAward(
+            @PathVariable Integer userId,
+            @PathVariable Integer awardId) {
+        awardService.deleteAward(userId, awardId);
         return ResponseEntity.noContent().build();
     }
 }

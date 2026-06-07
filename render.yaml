@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: portfolio-backend
+    runtime: docker
+    repo: https://github.com/YOUR_USERNAME/portfolio-backend  # Replace with your actual repo URL
+    branch: main
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: JAVA_OPTS
+        value: "-Xmx512m -Xms256m"
+      - key: DB_HOST
+        fromDatabase:
+          name: portfolio-mysql
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: portfolio-mysql
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: portfolio-mysql
+          property: name
+      - key: DB_USER
+        fromDatabase:
+          name: portfolio-mysql
+          property: username
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: portfolio-mysql
+          property: password
+      - key: AWS_REGION
+        value: us-east-1
+      - key: AWS_S3_BUCKET_NAME
+        value: portfolio-avatars
+      - key: AWS_ACCESS_KEY_ID
+        toSecret: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        toSecret: AWS_SECRET_ACCESS_KEY
+
+databases:
+  - name: portfolio-mysql
+    databaseName: portfolio_app
+    user: portfolio_user
+    region: ohio  # Change to your preferred region
+    plan: free

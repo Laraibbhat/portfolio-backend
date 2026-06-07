@@ -45,4 +45,7 @@ public class UserRequestDTO {
     private Set<PublicationDTO> publications;
     private Set<AwardDTO> awards;
     private Set<CoreCompetencyDTO> coreCompetencies;
+
+    private String avatarKey;
+    private String avatarUrl;
 }

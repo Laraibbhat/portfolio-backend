@@ -2,6 +2,7 @@ package com.portfolio.backend.service;
 
 import com.portfolio.backend.dto.UserDTO;
 import com.portfolio.backend.dto.UserRequestDTO;
+import com.portfolio.backend.dto.PresignedUrlResponse;
 import com.portfolio.backend.entity.*;
 import com.portfolio.backend.exception.ResourceNotFoundException;
 import com.portfolio.backend.mapper.*;
@@ -28,6 +29,7 @@ public class UserService {
     private final PublicationMapper publicationMapper;
     private final AwardMapper awardMapper;
     private final CoreCompetencyMapper coreCompetencyMapper;
+    private final S3UploadsService s3UploadsService;
 
     @Autowired
     public UserService(UserRepository userRepository, UserMapper userMapper,
@@ -39,7 +41,8 @@ public class UserService {
                        CertificationMapper certificationMapper,
                        PublicationMapper publicationMapper,
                        AwardMapper awardMapper,
-                       CoreCompetencyMapper coreCompetencyMapper) {
+                       CoreCompetencyMapper coreCompetencyMapper,
+                       S3UploadsService s3UploadsService) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.technicalExpertiseMapper = technicalExpertiseMapper;
@@ -51,52 +54,63 @@ public class UserService {
         this.publicationMapper = publicationMapper;
         this.awardMapper = awardMapper;
         this.coreCompetencyMapper = coreCompetencyMapper;
+        this.s3UploadsService = s3UploadsService;
+    }
+
+    // Helper method to populate avatarUrl from a DTO's avatarKey. This version performs S3 network I/O
+    // and should be called outside of a DB transaction to avoid holding locks during network calls.
+    private UserDTO populateAvatarUrl(UserDTO userDTO) {
+        String avatarKey = userDTO.getAvatarKey();
+        if (avatarKey != null && !avatarKey.isEmpty()) {
+            try {
+                PresignedUrlResponse presignedUrlResponse = s3UploadsService.generatePresignedDownloadUrl(avatarKey);
+                userDTO.setAvatarUrl(presignedUrlResponse.getUploadUrl()); // Assuming getUploadUrl() returns the download URL
+            } catch (ResourceNotFoundException e) {
+                // Avatar key exists but S3 object not found - leave avatarUrl null
+                System.err.println("Avatar S3 object not found for key: " + avatarKey);
+            } catch (Exception e) {
+                System.err.println("Error generating presigned URL for avatar key: " + avatarKey + " - " + e.getMessage());
+            }
+        }
+        return userDTO;
+    }
+
+    // Non-transactional public method: fetches data in a short transactional helper and then
+    // performs S3 calls outside the transaction to prevent holding DB locks while doing network I/O.
+    public List<UserDTO> getAllUsers() {
+        List<UserDTO> users = fetchAllUsersWithDetailsTransactional();
+        users.forEach(this::populateAvatarUrl);
+        return users;
     }
 
     @Transactional(readOnly = true)
-    public List<UserDTO> getAllUsers() {
+    public List<UserDTO> fetchAllUsersWithDetailsTransactional() {
         return userRepository.findAllWithDetails().stream()
-                .map(user -> {
-                    // Force initialization of all collections while transaction is active
-                    user.getTechnicalExpertise().size();
-                    user.getExperiences().size();
-                    user.getEducation().size();
-                    user.getCertifications().size();
-                    user.getPublications().size();
-                    user.getAwards().size();
-                    user.getCoreCompetencies().size();
-                    return userMapper.toDto(user);
-                })
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public UserDTO getUserById(Integer id) {
-        User user = userRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        // Force initialization of all collections while transaction is active
-        user.getTechnicalExpertise().size();
-        user.getExperiences().size();
-        user.getEducation().size();
-        user.getCertifications().size();
-        user.getPublications().size();
-        user.getAwards().size();
-        user.getCoreCompetencies().size();
-        return userMapper.toDto(user);
+        UserDTO userDTO = fetchUserByIdWithDetailsTransactional(id);
+        return populateAvatarUrl(userDTO);
     }
 
     @Transactional(readOnly = true)
+    public UserDTO fetchUserByIdWithDetailsTransactional(Integer id) {
+        User user = userRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        return userMapper.toDto(user);
+    }
+
     public UserDTO getUserByUsername(String username) {
+        UserDTO userDTO = fetchUserByUsernameWithDetailsTransactional(username);
+        return populateAvatarUrl(userDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public UserDTO fetchUserByUsernameWithDetailsTransactional(String username) {
         User user = userRepository.findByUsernameWithDetails(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
-        // Force initialization of all collections while transaction is active
-        user.getTechnicalExpertise().size();
-        user.getExperiences().size();
-        user.getEducation().size();
-        user.getCertifications().size();
-        user.getPublications().size();
-        user.getAwards().size();
-        user.getCoreCompetencies().size();
         return userMapper.toDto(user);
     }
 
@@ -314,5 +328,25 @@ public class UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
         userRepository.delete(user);
+    }
+
+    @Transactional
+    public void updateUserAvatar(String username, String avatarKey) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+        user.setAvatarKey(avatarKey);
+        userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public PresignedUrlResponse getAvatarPresignedUrl(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+        
+        if (user.getAvatarKey() == null || user.getAvatarKey().isEmpty()) {
+            throw new ResourceNotFoundException("No avatar found for user: " + username);
+        }
+        
+        return s3UploadsService.generatePresignedDownloadUrl(user.getAvatarKey());
     }
 }

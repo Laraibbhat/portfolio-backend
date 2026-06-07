@@ -33,11 +33,9 @@ services:
       - key: AWS_S3_BUCKET_NAME
         value: portfolio-avatars
       - key: AWS_ACCESS_KEY_ID
-        fromSecret:
-          name: aws_access_key_id
+        value: ${AWS_ACCESS_KEY_ID}
       - key: AWS_SECRET_ACCESS_KEY
-        fromSecret:
-          name: aws_secret_access_key
+        value: ${AWS_SECRET_ACCESS_KEY}
 
 databases:
   - name: portfolio-mysql

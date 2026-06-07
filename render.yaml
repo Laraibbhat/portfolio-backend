@@ -19,11 +19,11 @@ services:
       - key: DB_NAME
         fromDatabase:
           name: portfolio-mysql
-          property: name
+          property: database
       - key: DB_USER
         fromDatabase:
           name: portfolio-mysql
-          property: username
+          property: user
       - key: DB_PASSWORD
         fromDatabase:
           name: portfolio-mysql
@@ -33,9 +33,11 @@ services:
       - key: AWS_S3_BUCKET_NAME
         value: portfolio-avatars
       - key: AWS_ACCESS_KEY_ID
-        toSecret: AWS_ACCESS_KEY_ID
+        fromSecret:
+          name: aws_access_key_id
       - key: AWS_SECRET_ACCESS_KEY
-        toSecret: AWS_SECRET_ACCESS_KEY
+        fromSecret:
+          name: aws_secret_access_key
 
 databases:
   - name: portfolio-mysql

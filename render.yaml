@@ -2,7 +2,7 @@ services:
   - type: web
     name: portfolio-backend
     runtime: docker
-    repo: https://github.com/YOUR_USERNAME/portfolio-backend  # Replace with your actual repo URL
+    repo: https://github.com/laraibbhat/portfolio-backend  # Replace with your actual repo URL
     branch: main
     dockerfilePath: ./Dockerfile
     envVars:

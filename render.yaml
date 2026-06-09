@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: portfolio-backend
+    runtime: docker
+    repo: https://github.com/laraibbhat/portfolio-backend  # Replace with your actual repo URL
+    branch: main
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: JAVA_OPTS
+        value: "-Xmx512m -Xms256m"
+      - key: DB_HOST
+        value: "mysql-20010a39-lmushtaq10-6f27.e.aivencloud.com"
+      - key: DB_PORT
+        value: "24270"
+      - key: DB_NAME
+        value: "defaultdb"
+      - key: DB_USER
+        value: "avnadmin"
+      - key: DB_PASSWORD
+        value: ${DB_PASSWORD}
+      - key: DB_USE_SSL
+        value: "true"
+      - key: DB_REQUIRE_SSL
+        value: "true"
+      - key: DB_ALLOW_PUBLIC_KEY_RETRIEVAL
+        value: "false"
+      - key: AWS_REGION
+        value: us-east-1
+      - key: AWS_S3_BUCKET_NAME
+        value: portfolio-avatars
+      - key: AWS_ACCESS_KEY_ID
+        value: ${AWS_ACCESS_KEY_ID}
+      - key: AWS_SECRET_ACCESS_KEY
+        value: ${AWS_SECRET_ACCESS_KEY}
+
+databases:
+  - name: portfolio-mysql
+    databaseName: portfolio_app
+    user: portfolio_user
+    region: ohio  # Change to your preferred region
+    plan: free

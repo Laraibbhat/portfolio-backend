@@ -13,7 +13,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:3000") // Allow requests from your frontend origin
+//@CrossOrigin(origins = "http://localhost:3000") // Allow requests from your frontend origin
+@CrossOrigin(origins = {"http://localhost:3000", "https://www.kashify.shop"})
 public class UserController {
 
     private final UserService userService;

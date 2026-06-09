@@ -9,25 +9,21 @@ services:
       - key: JAVA_OPTS
         value: "-Xmx512m -Xms256m"
       - key: DB_HOST
-        fromDatabase:
-          name: portfolio-mysql
-          property: host
+        value: "mysql-20010a39-lmushtaq10-6f27.e.aivencloud.com"
       - key: DB_PORT
-        fromDatabase:
-          name: portfolio-mysql
-          property: port
+        value: "24270"
       - key: DB_NAME
-        fromDatabase:
-          name: portfolio-mysql
-          property: database
+        value: "defaultdb"
       - key: DB_USER
-        fromDatabase:
-          name: portfolio-mysql
-          property: user
+        value: "avnadmin"
       - key: DB_PASSWORD
-        fromDatabase:
-          name: portfolio-mysql
-          property: password
+        value: ${DB_PASSWORD}
+      - key: DB_USE_SSL
+        value: "true"
+      - key: DB_REQUIRE_SSL
+        value: "true"
+      - key: DB_ALLOW_PUBLIC_KEY_RETRIEVAL
+        value: "false"
       - key: AWS_REGION
         value: us-east-1
       - key: AWS_S3_BUCKET_NAME
